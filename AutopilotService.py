@@ -47,8 +47,8 @@ def on_message(cli, userdata, message):
 
     if command == 'go':
         if dron.state == 'flying':
-            direction = message.payload.decode("utf-8")
-            dron.go(direction)
+            #direction = message.payload.decode("utf-8")
+            dron.go(splited[3])
 
     if command == 'Land':
         if dron.state == 'flying':

@@ -2,11 +2,16 @@ import threading
 import time
 from pymavlink import mavutil
 
-def _checkAltitudeReached (self, msg, aTargetAltitude):
-    if msg.relative_alt in range (aTargetAltitude  * 1000 -500,  aTargetAltitude  * 1000 +500):
+def _checkAltitudeReached (msg, params):
+    aTargetAltitude = params.get("target_altitude", 5)
+    if abs(msg.relative_alt - aTargetAltitude * 1000) < 500:
         return True
-    else:
-        return False
+    return False
+# def _checkAltitudeReached (self, msg, aTargetAltitude):
+#     if msg.relative_alt in range (aTargetAltitude  * 1000 -500,  aTargetAltitude  * 1000 +500):
+#         return True
+#     else:
+#         return False
 
 def _takeOff(self, aTargetAltitude,callback=None, params = None):
     print ('empezamos a despegar')
