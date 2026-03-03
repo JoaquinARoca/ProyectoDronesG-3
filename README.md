@@ -296,6 +296,8 @@ Se proponen los siguientes ejercicios:
 2.	Añadir botones para reconocer otros objetos del data set de COCO.
 
 
+#DONE
+
 ## 5. Versión 2
 Lo que hemos llamado versión 1 no es en realidad una versión de nada. Se trata de diferentes módulos desarrollados de manera independiente para aprender conceptos y herramientas. Ahora ha llegado el momento de crear una verdadera versión de un sistema en el que los díferentes módulos estén interconectados y puedan colaborar en la tarea de controlar el dron.    
 
