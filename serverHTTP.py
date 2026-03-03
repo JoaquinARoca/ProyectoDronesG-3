@@ -15,8 +15,8 @@ MQTT_PORT = 1883
 MQTT_KEEPALIVE = 60
 
 # Topics (ajusta si tus tópicos son distintos)
-TOPIC_PREFIX_PUB = "mobileFlask/autopilotServiceDemo"        # donde publicamos comandos
-TOPIC_TELEMETRY_SUB = "autopilotServiceDemo/mobileFlask/telemetryInfo"  # donde viene telemetría
+TOPIC_PREFIX_PUB = "G3/autopilotServiceDemo"        # donde publicamos comandos
+TOPIC_TELEMETRY_SUB = "+/autopilotServiceDemo/+/telemetryInfo"  # donde viene telemetría
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 
@@ -89,14 +89,20 @@ def http_takeoff():
     altura = data.get("altura") or data.get("alt") or data.get("height")
     if altura is None:
         return jsonify({"error": "faltó campo 'altura' en JSON"}), 400
-    topic = f"{TOPIC_PREFIX_PUB}/arm_takeOff"
+    topic = f"{TOPIC_PREFIX_PUB}/arm_takeOff/{altura}"
     # publicar la altura como string (igual que hacía el cliente mqtt directamente)
-    mqtt_client.publish(topic, str(altura))
+    mqtt_client.publish(topic)
     return ("", 204)
 
 @app.route("/land", methods=["POST"])
 def http_land():
     topic = f"{TOPIC_PREFIX_PUB}/Land"
+    mqtt_client.publish(topic, "")
+    return ("", 204)
+
+@app.route("/rtl", methods=["POST"])
+def http_rtl():
+    topic = f"{TOPIC_PREFIX_PUB}/RTL"
     mqtt_client.publish(topic, "")
     return ("", 204)
 
@@ -113,11 +119,13 @@ def http_move():
 @app.route("/telemetry", methods=["GET"])
 def http_telemetry():
     # Devuelve la última telemetría conocida
+    mqtt_client.publish(f"{TOPIC_PREFIX_PUB}/startTelemetry","")
     with telemetry_lock:
         resp = {
             "alt": telemetry["alt"],
             "state": telemetry["state"],
         }
+    print(resp)
     return jsonify(resp)
 
 # Opcional: servir un archivo HTML desde / (si pones tu cliente en carpeta static/index.html)

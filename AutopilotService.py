@@ -5,6 +5,7 @@
 import paho.mqtt.client as mqtt
 import json
 from dronLink.Dron import Dron
+import random as r
 
 # esta función sirve para publicar los eventos resultantes de las acciones solicitadas
 def publish_event (event):
@@ -15,6 +16,7 @@ def publish_event (event):
 def publish_telemetry_info (telemetry_info):
     # cuando reciba datos de telemetría los publico
     global sending_topic, client
+    #print(f'Publicacion reciente {telemetry_info}')
     client.publish(sending_topic + '/telemetryInfo', json.dumps(telemetry_info))
 
 def on_message(cli, userdata, message):
@@ -27,8 +29,9 @@ def on_message(cli, userdata, message):
     origin = splited[0] # aqui tengo el nombre de la aplicación que origina la petición
     command = splited[2] # aqui tengo el comando
 
-    sending_topic = "autopilotServiceDemo/" + origin # lo necesitaré para enviar las respuestas
-
+    sending_topic = "G3/autopilotServiceDemo/" + origin # lo necesitaré para enviar las respuestas
+    print(splited)
+    
     if command == 'connect':
         connection_string = 'tcp:127.0.0.1:5763'
         baud = 115200
@@ -40,12 +43,12 @@ def on_message(cli, userdata, message):
             print ('vamos a armar')
             dron.arm()
             print ('vamos a despegar')
-            dron.takeOff(5, blocking=False, callback=publish_event, params='flying')
+            dron.takeOff(float(splited[3]) if len(splited) > 3 else 5, blocking=False, callback=publish_event, params='flying')
 
     if command == 'go':
         if dron.state == 'flying':
-            direction = message.payload.decode("utf-8")
-            dron.go(direction)
+            #direction = message.payload.decode("utf-8")
+            dron.go(splited[3])
 
     if command == 'Land':
         if dron.state == 'flying':
@@ -64,6 +67,14 @@ def on_message(cli, userdata, message):
     if command == 'stopTelemetry':
         dron.stop_sending_telemetry_info()
 
+    if command == 'changeSpeed':
+        if dron.state == 'flying':
+            dron.changeNavSpeed(float(splited[3]))
+    
+    if command == 'changeHeading':
+        if dron.state == 'flying':
+            dron.changeHeading(float(splited[3]))
+
 
 def on_connect(client, userdata, flags, rc):
     global connected
@@ -76,7 +87,7 @@ def on_connect(client, userdata, flags, rc):
 
 dron = Dron()
 
-client = mqtt.Client("autopilotServiceDemo", transport="websockets")
+client = mqtt.Client(str(r.randint(100,999))+"autopilotServiceDemo", transport="websockets")
 
 # me conecto al broker publico y gratuito
 broker_address = "broker.hivemq.com"

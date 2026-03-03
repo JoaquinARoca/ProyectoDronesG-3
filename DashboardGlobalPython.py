@@ -4,6 +4,8 @@ import tkinter as tk
 from dronLink.Dron import Dron
 import paho.mqtt.client as mqtt
 
+global direction 
+directionService = 'G3/autopilotServiceDemo/'
 def restart ():
     time.sleep (5)
 
@@ -33,7 +35,8 @@ def showTelemetryInfo (telemetry_info):
 
 def connect ():
     global dron, speedSldr
-    client.publish('interfazGlobal/autopilotServiceDemo/connect')
+    client.publish(f'{directionService}connect')
+    print(f'{directionService}connect')
     # cambiamos el color del boton
     connectBtn['text'] = 'Conectado'
     connectBtn['fg'] = 'white'
@@ -44,21 +47,21 @@ def connect ():
 
 def takeoff ():
     global dron
-    client.publish('interfazGlobal/autopilotServiceDemo/arm_takeOff')
+    client.publish(f'{directionService}arm_takeOff')
     arm_takeOffBtn['text'] = 'Despegando...'
     arm_takeOffBtn['fg'] = 'black'
     arm_takeOffBtn['bg'] = 'yellow'
 
 def land ():
     global dron
-    client.publish('interfazGlobal/autopilotServiceDemo/Land')
+    client.publish(f'{directionService}Land')
     landBtn['text'] = 'Aterrizando ...'
     landBtn['fg'] = 'black'
     landBtn['bg'] = 'yellow'
 
 def RTL():
     global dron
-    client.publish('interfazGlobal/autopilotServiceDemo/RTL')
+    client.publish(f'{directionService}RTL')
     RTLBtn['text'] = 'Retornando ...'
     RTLBtn['fg'] = 'black'
     RTLBtn['bg'] = 'yellow'
@@ -70,7 +73,7 @@ def go (direction, btn):
         previousBtn['fg'] = 'black'
         previousBtn['bg'] = 'dark orange'
 
-    client.publish('interfazGlobal/autopilotServiceDemo/go', direction)
+    client.publish(f'{directionService}go', direction)
     # pongo en verde el boton clicado
     btn['fg'] = 'white'
     btn['bg'] = 'green'
@@ -80,19 +83,25 @@ def go (direction, btn):
 
 def startTelem():
     global dron
-    client.publish('interfazGlobal/autopilotServiceDemo/startTelemetry')
+    client.publish(f'{directionService}startTelemetry')
 
 def stopTelem():
     global dron
-    client.publish('interfazGlobal/autopilotServiceDemo/stopTelem')
+    client.publish(f'{directionService}stopTelemetry')
+    altShowLbl['text'] = ''
+    headingShowLbl['text'] = ''
+    stateShowLbl['text'] = ''
 
 def changeHeading (event):
     global dron
-    global gradesSldr
+    global gradesSldr 
+    client.publish(f'{directionService}changeHeading/'+str(gradesSldr.get()))
+
 
 def changeNavSpeed (event):
     global dron
     global speedSldr
+    client.publish(f'{directionService}changeSpeed/'+str(speedSldr.get()))
 
 
 def on_connect(client, userdata, flags, rc):
@@ -106,28 +115,28 @@ def on_message(client, userdata, message):
     # aqui proceso los eventos que me envía el autopilot service
     # basicamente son las indicaciones de que se han ido completando las operaciones solicitadas
     # lo cual me permite ir cambiando los colores de los botones
-    if message.topic == 'autopilotServiceDemo/interfazGlobal/telemetryInfo':
+    if message.topic == f'{directionService}interfazGlobal/telemetryInfo':
         # la telemetria llega en json
         # la envio a la función que procesa esa información
         telemetry_info = json.loads(message.payload)
         showTelemetryInfo (telemetry_info)
-    if message.topic == 'autopilotServiceDemo/interfazGlobal/connected':
+    if message.topic == f'{directionService}interfazGlobal/connected':
         connectBtn['text'] = 'Conectado'
         connectBtn['fg'] = 'white'
         connectBtn['bg'] = 'green'
 
 
-    if message.topic == 'autopilotServiceDemo/interfazGlobal/flying':
+    if message.topic == f'{directionService}interfazGlobal/flying':
         arm_takeOffBtn['text'] = 'En el aire'
         arm_takeOffBtn['fg'] = 'white'
         arm_takeOffBtn['bg'] = 'green'
 
-    if message.topic == 'autopilotServiceDemo/interfazGlobal/landed':
+    if message.topic == f'{directionService}interfazGlobal/landed':
         landBtn['text'] = 'En tierra'
         landBtn['fg'] = 'white'
         landBtn['bg'] = 'green'
         restart()
-    if message.topic == 'autopilotServiceDemo/interfazGlobal/atHome':
+    if message.topic == f'{directionService}interfazGlobal/atHome':
         RTLBtn['text'] = 'En tierra'
         RTLBtn['fg'] = 'white'
         RTLBtn['bg'] = 'green'
@@ -141,7 +150,7 @@ def crear_ventana():
     global connectBtn, armBtn, arm_takeOffBtn, landBtn, RTLBtn
     global previousBtn # aqui guardaré el ultimo boton de navegación clicado
 
-    client = mqtt.Client("InterfazGlobal", transport="websockets")
+    client = mqtt.Client("G3JoaInterfazGlobal", transport="websockets")
 
     # me conecto al broker publico y gratuito
     broker_address = "broker.hivemq.com"
@@ -152,7 +161,7 @@ def crear_ventana():
     client.connect(broker_address, broker_port)
 
     # me subscribo a cualquier mensaje  que venga del autopilot service
-    client.subscribe('autopilotServiceDemo/interfazGlobal/#')
+    client.subscribe(f'{directionService}interfazGlobal/#')
     client.loop_start()
 
     dron = Dron()
@@ -237,7 +246,7 @@ def crear_ventana():
 
     SWBtn = tk.Button(navFrame, text="SW", bg="dark orange",
                         #command=lambda: go("SouthWest", SWBtn))
-                        command = lambda: go("Down", SWBtn))
+                        command = lambda: go("SouthWest", SWBtn))
     SWBtn.grid(row=2, column=0, padx=2, pady=2, sticky=tk.N + tk.S + tk.E + tk.W)
 
     SoBtn = tk.Button(navFrame, text="So", bg="dark orange",
@@ -246,7 +255,7 @@ def crear_ventana():
 
     SEBtn = tk.Button(navFrame, text="SE", bg="dark orange",
                         #command=lambda: go("SouthEast", SEBtn))
-                        command = lambda: go("Up", SEBtn))
+                        command = lambda: go("SouthEast", SEBtn))
     SEBtn.grid(row=2, column=2, padx=2, pady=2, sticky=tk.N + tk.S + tk.E + tk.W)
 
 
