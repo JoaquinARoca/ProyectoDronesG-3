@@ -63,16 +63,22 @@
         <button id="botonRTL" class="boton" onclick="rtl()">RTL</button>
 
         <!-- 🔵 Botones de dirección -->
-        <div class="direction">
-            <div onclick="moverDron('NorthWest')" class="box">NW</div>
-            <div onclick="moverDron('North')" class="box">N</div>
-            <div onclick="moverDron('NorthEast')" class="box">NE</div>
-            <div onclick="moverDron('West')" class="box">W</div>
-            <div onclick="moverDron('Stop')" class="box">Stop</div>
-            <div onclick="moverDron('East')" class="box">E</div>
-            <div onclick="moverDron('SouthWest')" class="box">SW</div>
-            <div onclick="moverDron('South')" class="box">S</div>
-            <div onclick="moverDron('SouthEast')" class="box">SE</div>
+        <div>
+            <div class="direction">
+                <div onclick="moverDron('NorthWest')" class="box">NW</div>
+                <div onclick="moverDron('North')" class="box">N</div>
+                <div onclick="moverDron('NorthEast')" class="box">NE</div>
+                <div onclick="moverDron('West')" class="box">W</div>
+                <div onclick="moverDron('Stop')" class="box">Stop</div>
+                <div onclick="moverDron('East')" class="box">E</div>
+                <div onclick="moverDron('SouthWest')" class="box">SW</div>
+                <div onclick="moverDron('South')" class="box">S</div>
+                <div onclick="moverDron('SouthEast')" class="box">SE</div>
+            </div>
+            <div>
+                <input type="number" id="heading" class="form-control mb-2" placeholder="Ángulo de cabeceo">
+                <button id="botonHeading" class="boton" onclick="headingDron(document.getElementById('heading').value)">Cambiar Heading</button>
+            </div>
         </div>
 
         <!-- 🔵 Altitud debajo de los 9 botones, ancho completo -->
@@ -155,6 +161,10 @@
 
         function moverDron(direction) {
             client.publish(`G3/autopilotServiceDemo/go/${direction}`);
+        }
+
+        function headingDron(angle){
+            client.publish('G3/autopilotServiceDemo/changeHeading/'+ angle);
         }
     </script>
 

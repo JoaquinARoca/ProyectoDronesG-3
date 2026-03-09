@@ -146,17 +146,16 @@ setInterval(() => {
             return r.json();
         })
         .then(data => {
-            console.log("Telemetría recibida:", data);
-            
             // Validar que los datos existen
             if (data.alt !== undefined) {
                 document.getElementById("altitudValor").innerText = parseFloat(data.alt).toFixed(2);
             }
             
-            if(data.state === "land"){
+            if(data.state === "connected"){
                 document.getElementById("altitudValor").innerText = "0.00";
                 document.getElementById("estadoTelemetria").innerText = "aterrizado";
                 document.getElementById('botonDespegar').classList.remove('boton-verde');
+                document.getElementById('botonAterrizar').classList.remove('boton-amarillo');
                 document.getElementById('botonAterrizar').classList.add('boton-verde');
             }
             const estado = data.state || "desconectado";
