@@ -73,7 +73,7 @@ def go (direction, btn):
         previousBtn['fg'] = 'black'
         previousBtn['bg'] = 'dark orange'
 
-    client.publish(f'{directionService}go', direction)
+    client.publish(f'{directionService}go/{direction}' )
     # pongo en verde el boton clicado
     btn['fg'] = 'white'
     btn['bg'] = 'green'
@@ -82,6 +82,7 @@ def go (direction, btn):
 
 
 def startTelem():
+    print("pido telemetria")
     global dron
     client.publish(f'{directionService}startTelemetry')
 
@@ -115,28 +116,30 @@ def on_message(client, userdata, message):
     # aqui proceso los eventos que me envía el autopilot service
     # basicamente son las indicaciones de que se han ido completando las operaciones solicitadas
     # lo cual me permite ir cambiando los colores de los botones
-    if message.topic == f'{directionService}interfazGlobal/telemetryInfo':
+    print(f"Mensaje recibido {message.topic}")
+    print(f"Payload recibido {message.payload}")
+    if message.topic == f'{directionService}G3/telemetryInfo':
         # la telemetria llega en json
         # la envio a la función que procesa esa información
         telemetry_info = json.loads(message.payload)
         showTelemetryInfo (telemetry_info)
-    if message.topic == f'{directionService}interfazGlobal/connected':
+    if message.topic == f'{directionService}G3/connected':
         connectBtn['text'] = 'Conectado'
         connectBtn['fg'] = 'white'
         connectBtn['bg'] = 'green'
 
 
-    if message.topic == f'{directionService}interfazGlobal/flying':
+    if message.topic == f'{directionService}G3/flying':
         arm_takeOffBtn['text'] = 'En el aire'
         arm_takeOffBtn['fg'] = 'white'
         arm_takeOffBtn['bg'] = 'green'
 
-    if message.topic == f'{directionService}interfazGlobal/landed':
+    if message.topic == f'{directionService}G3/landed':
         landBtn['text'] = 'En tierra'
         landBtn['fg'] = 'white'
         landBtn['bg'] = 'green'
         restart()
-    if message.topic == f'{directionService}interfazGlobal/atHome':
+    if message.topic == f'{directionService}G3/atHome':
         RTLBtn['text'] = 'En tierra'
         RTLBtn['fg'] = 'white'
         RTLBtn['bg'] = 'green'
@@ -161,7 +164,7 @@ def crear_ventana():
     client.connect(broker_address, broker_port)
 
     # me subscribo a cualquier mensaje  que venga del autopilot service
-    client.subscribe(f'{directionService}interfazGlobal/#')
+    client.subscribe(f'{directionService}G3/#')
     client.loop_start()
 
     dron = Dron()
