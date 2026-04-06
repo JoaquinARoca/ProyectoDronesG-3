@@ -5,7 +5,8 @@
 import paho.mqtt.client as mqtt
 import json
 from dronLink.Dron import Dron
-import random as r
+
+usuario = "aleix"
 
 # esta función sirve para publicar los eventos resultantes de las acciones solicitadas
 def publish_event (event):
@@ -16,7 +17,6 @@ def publish_event (event):
 def publish_telemetry_info (telemetry_info):
     # cuando reciba datos de telemetría los publico
     global sending_topic, client
-    #print(f'Publicacion reciente {telemetry_info}')
     client.publish(sending_topic + '/telemetryInfo', json.dumps(telemetry_info))
 
 def on_message(cli, userdata, message):
@@ -29,9 +29,8 @@ def on_message(cli, userdata, message):
     origin = splited[0] # aqui tengo el nombre de la aplicación que origina la petición
     command = splited[2] # aqui tengo el comando
 
-    sending_topic = "G3/autopilotServiceDemo/" + origin # lo necesitaré para enviar las respuestas
-    print(splited)
-    
+    sending_topic = "autopilotServiceDemo/" + origin # lo necesitaré para enviar las respuestas
+
     if command == 'connect':
         connection_string = 'tcp:127.0.0.1:5763'
         baud = 115200
@@ -43,12 +42,12 @@ def on_message(cli, userdata, message):
             print ('vamos a armar')
             dron.arm()
             print ('vamos a despegar')
-            dron.takeOff(float(splited[3]) if len(splited) > 3 else 5, blocking=False, callback=publish_event, params='flying')
+            dron.takeOff(5, blocking=False, callback=publish_event, params='flying')
 
     if command == 'go':
         if dron.state == 'flying':
-            #direction = message.payload.decode("utf-8")
-            dron.go(splited[3])
+            direction = message.payload.decode("utf-8")
+            dron.go(direction)
 
     if command == 'Land':
         if dron.state == 'flying':
@@ -67,13 +66,15 @@ def on_message(cli, userdata, message):
     if command == 'stopTelemetry':
         dron.stop_sending_telemetry_info()
 
-    if command == 'changeSpeed':
-        if dron.state == 'flying':
-            dron.changeNavSpeed(float(splited[3]))
-    
     if command == 'changeHeading':
         if dron.state == 'flying':
-            dron.changeHeading(float(splited[3]))
+            heading = float(message.payload.decode("utf-8"))
+            dron.changeHeading(int(heading))
+
+    if command == 'changeNavSpeed':
+        if dron.state == 'flying':
+            speed = float(message.payload.decode("utf-8"))
+            dron.changeNavSpeed(float(speed))
 
 
 def on_connect(client, userdata, flags, rc):
@@ -87,18 +88,19 @@ def on_connect(client, userdata, flags, rc):
 
 dron = Dron()
 
-client = mqtt.Client(str(r.randint(100,999))+"autopilotServiceDemo", transport="websockets")
+client = mqtt.Client(f"Servicio_{usuario}", transport="websockets")
 
 # me conecto al broker publico y gratuito
-broker_address = "broker.hivemq.com"
+broker_address = "dronseetac.upc.edu"
 broker_port = 8000
+client.username_pw_set("dronsEETAC", "mimara1456.")
 
 client.on_message = on_message
 client.on_connect = on_connect
 client.connect (broker_address,broker_port)
 
 # me subscribo a todos los mensajes cuyo destino sea este servicio
-client.subscribe('+/autopilotServiceDemo/#')
-print ('AutopilotServiceDemo esperando peticiones')
+client.subscribe(f'{usuario}/autopilotServiceDemo/#')
+print (f'AutopilotServiceDemo esperando peticiones de {usuario}')
 client.loop_forever()
 

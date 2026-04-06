@@ -10,13 +10,19 @@ import paho.mqtt.client as mqtt
 from threading import Lock
 
 # CONFIGURACIÓN
-MQTT_BROKER = "broker.hivemq.com"   # cambia si quieres otro broker
-MQTT_PORT = 1883
+usuario = "aleix"
+broker_address = "dronseetac.upc.edu"
+broker_port = 8000
+# Broker configuration
+# NOTE: don't call username_pw_set here because the mqtt client isn't created yet.
+
+MQTT_BROKER = broker_address
+MQTT_PORT = broker_port  # use the port defined above (change to 1883 if your broker uses default MQTT port)
 MQTT_KEEPALIVE = 60
 
 # Topics (ajusta si tus tópicos son distintos)
-TOPIC_PREFIX_PUB = "G3/autopilotServiceDemo"        # donde publicamos comandos
-TOPIC_TELEMETRY_SUB = "+/autopilotServiceDemo/+/telemetryInfo"  # donde viene telemetría
+TOPIC_PREFIX_PUB = f"{usuario}/autopilotServiceDemo"        # donde publicamos comandos
+TOPIC_TELEMETRY_SUB = f"autopilotServiceDemo/{usuario}/telemetryInfo"  # donde viene telemetría
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 
@@ -28,9 +34,9 @@ telemetry = {
 telemetry_lock = Lock()
 
 # --- MQTT client setup ---
-mqtt_client = mqtt.Client(client_id="http_gateway_" + str(int(time.time())))
-# Si tu broker requiere username/password:
-# mqtt_client.username_pw_set("user", "pass")
+mqtt_client = mqtt.Client(client_id=f"http_gateway_{usuario}" )
+# Si tu broker requiere username/password, configúralo después de crear el cliente
+mqtt_client.username_pw_set("dronsEETAC", "mimara1456.")
 
 def on_connect(client, userdata, flags, rc):
     print("MQTT conectado con rc =", rc)
@@ -89,9 +95,9 @@ def http_takeoff():
     altura = data.get("altura") or data.get("alt") or data.get("height")
     if altura is None:
         return jsonify({"error": "faltó campo 'altura' en JSON"}), 400
-    topic = f"{TOPIC_PREFIX_PUB}/arm_takeOff/{altura}"
+    topic = f"{TOPIC_PREFIX_PUB}/arm_takeOff"
     # publicar la altura como string (igual que hacía el cliente mqtt directamente)
-    mqtt_client.publish(topic)
+    mqtt_client.publish(topic, str(altura))
     return ("", 204)
 
 @app.route("/land", methods=["POST"])
@@ -99,7 +105,6 @@ def http_land():
     topic = f"{TOPIC_PREFIX_PUB}/Land"
     mqtt_client.publish(topic, "")
     return ("", 204)
-
 @app.route("/rtl", methods=["POST"])
 def http_rtl():
     topic = f"{TOPIC_PREFIX_PUB}/RTL"
@@ -119,13 +124,11 @@ def http_move():
 @app.route("/telemetry", methods=["GET"])
 def http_telemetry():
     # Devuelve la última telemetría conocida
-    mqtt_client.publish(f"{TOPIC_PREFIX_PUB}/startTelemetry","")
     with telemetry_lock:
         resp = {
             "alt": telemetry["alt"],
             "state": telemetry["state"],
         }
-    print(resp)
     return jsonify(resp)
 
 # Opcional: servir un archivo HTML desde / (si pones tu cliente en carpeta static/index.html)

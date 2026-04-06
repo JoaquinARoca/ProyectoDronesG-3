@@ -10,163 +10,171 @@
 
 <style>
     .boton {
-        font-size: 18px;
-        padding: 10px;
-        margin: 5px 0;
-        cursor: pointer;
-        background-color: #008CBA;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        width: 100%;
-        transition: background-color 0.3s;
+        font-size: 18px; padding: 10px; margin: 5px 0; cursor: pointer;
+        background-color: #008CBA; color: white; border: none;
+        border-radius: 5px; width: 100%; transition: background-color 0.3s;
     }
-
-    .boton-verde { background-color: #4CAF50; }
-    .boton-amarillo { background-color: #FFD700; }
-    .boton-rojo { background-color: #f44336; }
+    .boton-verde { background-color: #4CAF50 !important; }
+    .boton-amarillo { background-color: #FFD700 !important; color: black !important; }
+    .boton-rojo { background-color: #f44336 !important; }
 
     .direction {
-        display: grid;
-        grid-template-rows: 100px 100px 100px;
-        grid-template-columns: 100px 100px 100px;
-        text-align: center;
-        width:80%;
-        margin: 20px auto;
+        display: grid; grid-template-rows: 100px 100px 100px;
+        grid-template-columns: 100px 100px 100px; text-align: center;
+        width:fit-content; margin: 20px auto;
     }
-
     .box {
-        background: #444;
-        border: 1px solid #555;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: yellowgreen;
-        font-size: 18px;
-        margin: 5px;
-        cursor: pointer;
+        background: #444; border: 1px solid #555; display: flex;
+        align-items: center; justify-content: center; color: yellowgreen;
+        font-size: 18px; margin: 5px; cursor: pointer; border-radius: 8px;
     }
 </style>
 
 <body>
-    <div class="container mt-3">
+    <div class="container mt-3" style="max-width: 500px;">
 
-        <!-- 🔵 Botón de conectar (arriba del todo, ancho completo) -->
         <button id="botonConectar" class="boton" onclick="conectarDron()">Conectar con Dron</button>
 
-        <!-- 🔵 Altura + despegar (segunda fila, orden vertical, ancho completo) -->
-        <input type="number" id="altura" class="form-control mb-2" placeholder="Altura en metros">
+        <label class="form-label mt-2">Altura de despegue (m):</label>
+        <input type="number" id="altura" class="form-control mb-2" placeholder="Ej: 10" value="5">
+
+        <div class="p-2 border rounded bg-light mb-2">
+            <label class="form-label">Heading: <span id="headingVal">0</span>°</label>
+            <input id="headingRange" type="range" min="0" max="360" value="0" class="form-range" oninput="document.getElementById('headingVal').innerText=this.value;" onchange="cambiarHeading(this.value)">
+        </div>
+
         <button id="botonDespegar" class="boton" onclick="despegarDron()">Despegar</button>
-
-        <!-- 🔵 Botón de aterrizar (tercera fila, ancho completo) -->
         <button id="botonAterrizar" class="boton" onclick="aterrizarDron()">Aterrizar Dron</button>
-        <button id="botonRTL" class="boton" onclick="rtl()">RTL</button>
+        <button id="botonRTL" class="boton" onclick="rtlDron()">RTL (Volver a Casa)</button>
 
-        <!-- 🔵 Botones de dirección -->
-        <div>
-            <div class="direction">
-                <div onclick="moverDron('NorthWest')" class="box">NW</div>
-                <div onclick="moverDron('North')" class="box">N</div>
-                <div onclick="moverDron('NorthEast')" class="box">NE</div>
-                <div onclick="moverDron('West')" class="box">W</div>
-                <div onclick="moverDron('Stop')" class="box">Stop</div>
-                <div onclick="moverDron('East')" class="box">E</div>
-                <div onclick="moverDron('SouthWest')" class="box">SW</div>
-                <div onclick="moverDron('South')" class="box">S</div>
-                <div onclick="moverDron('SouthEast')" class="box">SE</div>
-            </div>
-            <div>
-                <input type="number" id="heading" class="form-control mb-2" placeholder="Ángulo de cabeceo">
-                <button id="botonHeading" class="boton" onclick="headingDron(document.getElementById('heading').value)">Cambiar Heading</button>
-            </div>
+        <div class="direction">
+            <div onclick="moverDron('NorthWest')" class="box">NW</div>
+            <div onclick="moverDron('North')" class="box">N</div>
+            <div onclick="moverDron('NorthEast')" class="box">NE</div>
+            <div onclick="moverDron('West')" class="box">W</div>
+            <div onclick="moverDron('Stop')" class="box" style="color:red; font-weight:bold;">Stop</div>
+            <div onclick="moverDron('East')" class="box">E</div>
+            <div onclick="moverDron('SouthWest')" class="box">SW</div>
+            <div onclick="moverDron('South')" class="box">S</div>
+            <div onclick="moverDron('SouthEast')" class="box">SE</div>
         </div>
 
-        <!-- 🔵 Altitud debajo de los 9 botones, ancho completo -->
-        <div id="telemetriaDiv" style="font-size: 24px; text-align: center; width:100%; margin-top: 20px;">
-            <p><strong>Altitud:</strong> <span id="altitudValor">0</span> m</p>
-            <p><strong>Estado:</strong> <span id="estadoValor">Desconectado</span></p>
+        <div id="telemetriaDiv" class="mt-4 p-3 bg-dark text-white rounded text-center">
+            <p class="mb-0">Altitud Actual: <span id="altitudValor" class="h2 text-warning">0.00</span> m</p>
+            <small id="estadoDron">Estado: Desconectado</small>
         </div>
-
     </div>
 
     <script>
-        const client = mqtt.connect('ws://broker.hivemq.com:8000/mqtt', {
+        const usuario = "aleix"
+        // Broker configuration: replace with your broker settings
+        const BROKER_HOST = 'dronseetac.upc.edu';
+        const BROKER_PORT = 8000; // cambiar a 1883 si usas MQTT nativo, pero en navegador suele ser WebSockets
+        const BROKER_PROTOCOL = 'ws'; // 'ws' o 'wss' (wss = WebSocket seguro)
+        const BROKER_PATH = '/mqtt';
+        const BROKER_USERNAME = 'dronsEETAC';
+        const BROKER_PASSWORD = 'mimara1456.';
+
+        const brokerUrl = `${BROKER_PROTOCOL}://${BROKER_HOST}:${BROKER_PORT}${BROKER_PATH}`;
+        var despegueIniciado = false;
+        var aterrizajeIniciado = false;
+        var rtlIniciado = false;
+
+        console.log('Conectando al broker MQTT en', brokerUrl);
+        const client = mqtt.connect(brokerUrl, {
             clean: false,
             keepalive: 60,
-            clientId: 'webapp_' + Math.random().toString(16).substr(2, 8),
-            reconnectPeriod: 1000,
+            clientId: 'webapp_' + usuario + Math.random().toString(16).substr(2, 8),
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD,
         });
 
-        client.on('connect', function () {
-            console.log('Conectado al broker MQTT');
-            client.subscribe('G3/autopilotServiceDemo/#');
+        client.on('connect', () => {
+            console.log('Conectado');
+            client.subscribe('autopilotServiceDemo/' + usuario + '/#');
         });
 
-        client.on('message', function (topic, message) {
-            if (topic.endsWith("/telemetryInfo")) {
-                const data = JSON.parse(message.toString());
-                const alt = data.alt;
-                const estado = data.state;
-                document.getElementById("estadoValor").innerText = estado;
-                if (estado === "flying") {
-                    const botonDespegar = document.getElementById('botonDespegar');
-                    botonDespegar.classList.remove('boton-amarillo');
-                    botonDespegar.classList.add('boton-verde');
-                    document.getElementById('botonAterrizar').classList.remove('boton-verde')
-                    document.getElementById('botonAterrizar').classList.innerText = "Aterrizar Dron";
-                }
-                else if(estado === "landing"){
-                    const botonAterrizar = document.getElementById('botonAterrizar');
-                    botonAterrizar.classList.add('boton-amarillo');
-                    if(alt < 0.5){
-                        const botonAterrizar = document.getElementById('botonAterrizar');
-                        botonAterrizar.classList.remove('boton-amarillo');
-                        botonAterrizar.classList.add('boton-verde');
+        client.on('message', (topic, message) => {
+            if (topic.includes("telemetryInfo")) {
+                try {
+                    const data = JSON.parse(message.toString());
+                    const alt = data.alt;
+                    const estado = data.state;
+
+                    // Actualizar Display de Altura
+                    if (alt !== undefined) {
+                        document.getElementById("altitudValor").innerText = parseFloat(alt).toFixed(2);
                     }
-                }
-                if(alt < 0.5 && (estado != "flying" && estado != "landing" && estado != "Desconectado")){
-                    const botonAterrizar = document.getElementById('botonAterrizar');
-                    botonAterrizar.classList.innerText = "Aterrizado";
-                    botonAterrizar.classList.remove('boton-amarillo');
-                    botonAterrizar.classList.add('boton-verde');
-                }
-                
 
-                document.getElementById("altitudValor").innerText = alt.toFixed(2);
+                    document.getElementById("estadoDron").innerText = "Estado: " + estado;
+
+                    // Lógica de botones según estado
+                    if (estado === "flying" && despegueIniciado) {
+                        document.getElementById('botonDespegar').classList.replace('boton-amarillo', 'boton-verde');
+                        despegueIniciado = false;
+                    }
+                    if (estado === "landing" && aterrizajeIniciado) {
+                        document.getElementById('botonAterrizar').classList.replace('boton-verde','boton-amarillo');
+                    }
+                    if (estado === "connected" && aterrizajeIniciado) {
+                        document.getElementById('botonAterrizar').classList.replace('boton-amarillo', 'boton-verde');
+                        aterrizajeIniciado = false;
+                    }
+                    if (estado === "returning" && rtlIniciado) {
+                        document.getElementById('botonRTL').classList.replace('boton-verde', 'boton-amarillo');
+                    }
+                    if (estado === "connected" && rtlIniciado) {
+                        document.getElementById('botonRTL').classList.replace('boton-amarillo', 'boton-verde');
+                        rtlIniciado = false;
+                    }
+                } catch (e) { console.error("Error en telemetría", e); }
             }
         });
 
         function conectarDron() {
-            client.publish('G3/autopilotServiceDemo/connect');
+            client.publish(usuario + '/autopilotServiceDemo/connect', "");
             document.getElementById('botonConectar').classList.add('boton-verde');
-            client.publish('G3/autopilotServiceDemo/startTelemetry');
+            client.publish(usuario+'/autopilotServiceDemo/startTelemetry', "");
         }
 
         function despegarDron() {
-            const altura = document.getElementById('altura').value;
-            if (altura) {
-                client.publish(`G3/autopilotServiceDemo/arm_takeOff/${altura}`);
+            const alturaInput = document.getElementById('altura').value;
+            if (alturaInput) {
+                // SOLUCIÓN AL PROBLEMA DE LOS 5M:
+                // Aseguramos que el valor sea un string numérico limpio
+                client.publish(usuario +'/autopilotServiceDemo/arm_takeOff', String(alturaInput));
+
+                despegueIniciado = true;
                 document.getElementById('botonDespegar').classList.add('boton-amarillo');
-            } else {
-                alert("Por favor, ingrese una altura válida.");
+                // Limpiar otros estados
+                document.getElementById('botonAterrizar').classList.remove('boton-verde', 'boton-amarillo');
+                document.getElementById('botonRTL').classList.remove('boton-verde', 'boton-amarillo');
             }
         }
 
         function aterrizarDron() {
-            client.publish('G3/autopilotServiceDemo/Land');
+            client.publish(usuario +'/autopilotServiceDemo/Land', "");
+            aterrizajeIniciado = true;
+            document.getElementById('botonAterrizar').classList.add('boton-amarillo');
+            document.getElementById('botonDespegar').classList.remove('boton-verde', 'boton-amarillo');
         }
-        function rtl() {
-            client.publish('G3/autopilotServiceDemo/RTL');
+
+        function rtlDron() {
+            client.publish(usuario +'/autopilotServiceDemo/RTL', "");
+            rtlIniciado = true;
+            document.getElementById('botonRTL').classList.add('boton-amarillo');
+            document.getElementById('botonDespegar').classList.remove('boton-verde', 'boton-amarillo');
         }
 
         function moverDron(direction) {
-            client.publish(`G3/autopilotServiceDemo/go/${direction}`);
+            client.publish(usuario +'/autopilotServiceDemo/go', direction);
         }
 
-        function headingDron(angle){
-            client.publish('G3/autopilotServiceDemo/changeHeading/'+ angle);
+        function cambiarHeading(val) {
+            // Publicar al topic exacto que espera el servicio
+            client.publish(usuario +'/autopilotServiceDemo/changeHeading', String(val));
+            document.getElementById('headingVal').innerText = val;
         }
     </script>
-
 </body>
 </html>

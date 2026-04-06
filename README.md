@@ -1,6 +1,6 @@
 # Guía para el proyecto de drones   
  
-## 1. Introducción   
+## 1. Introducción  
 
 El proceso que se describe en esta guía tiene por objetivo el desarrollo de una aplicación de control de un dron (o varios) que pueda demostrarse en el DroneLab del Campus del Baix Llobregat. Esta aplicación se desarrollará en equipos de 3 o 4 personas.
 El proceso permite el aprendizaje de una variedad de conceptos, tecnologías y herramientas. En particular, se aprende (entre otras cosas):   
@@ -20,6 +20,23 @@ Acabada la versión 2 cada equipo deberá decidir las funcionalidades que tendr�
  
 La versión 4 será la versión final con todas las funcionalidades previstas. Además de demostrar el correcto funcionamiento en el DroneLab, cada equipo deberá entregar el resultado en forma de repositorio en GitHub, que incluya los códigos desarrollados, explicaciones detalladas sobre cómo instalar y poner en marcha la aplicación y vídeos que muestren el funcionamiento y describan cómo está organizado el código desarrollado.    
 
+## 2. Criterios de evaluación    
+
+ - 50% Proyecto
+ - 20% Examen 1
+ - 20% Examen 2
+ - 10% Actitud y Participación
+
+## 3. Recursos    
+### 3.1 Git y GitHub   
+Git y GitHub son herramientas que facilitan la gestión de versiones, el mantenimiento de código en la nube y el trabajo cooperativo en el desarrollo de código o documentos.   
+
+En este vídeo se explica lo esencial para instalarse las herramientas y entender los principios de funcionamiento:   
+
+[![](https://markdown-videos-api.jorgenkh.no/url?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DI_fQlby426k)](https://www.youtube.com/playlist?list=PLj_C4NVXL2Sgq1N5G1MGbSjsXUIVGZ4S3)    
+
+Git puede instalarse desde esta página:   
+https://git-scm.com/downloads
 
 ### 3.2 Mission Planner y SITL    
 Mission planner es una aplicación de escritorio que permite interactuar con el dron. Por ejemplo, permite configurar muchos parámetros del dron y darle ordenes típicas (armar, despegar, volar a un punto dado, etc.). Mission Planner permite también poner en marcha un simulador del dron, que llamaremos SITL (Software In The Loop). Tanto Mission Planner como las aplicaciones que se desarrollan en esta guía interactúan con el simulador, exactamente igual que como lo harían con el dron real. Esto es ideal para desarrollar y verificar el correcto funcionamiento de los códigos antes de usarlos para controlar el dron real.    
@@ -278,8 +295,6 @@ Se proponen los siguientes ejercicios:
 1.	Procesar 1 de cada 100 frames hace que el impacto en la fluidez sea despreciable, pero introduce un retardo en la detección del objeto. Experimentar con valores más bajos de ese periodo hasta encontrar un mejor compromiso entre fluidez y retardo en la detección.
 2.	Añadir botones para reconocer otros objetos del data set de COCO.
 
-
-#DONE
 
 ## 5. Versión 2
 Lo que hemos llamado versión 1 no es en realidad una versión de nada. Se trata de diferentes módulos desarrollados de manera independiente para aprender conceptos y herramientas. Ahora ha llegado el momento de crear una verdadera versión de un sistema en el que los díferentes módulos estén interconectados y puedan colaborar en la tarea de controlar el dron.    
