@@ -57,7 +57,8 @@
 
         <!-- Botón Aterrizar -->
         <button id="botonAterrizar" class="boton" onclick="aterrizarDron()">Aterrizar Dron</button>
-        <button id="RTL" class="boton" onclick="rtlDron()">RTL</button>
+        <!-- Botón RTL -->
+        <button id="botonRtl" class="boton" onclick="rtlDron()">Return to Launch (RTL)</button>
 
         <!-- Botones de dirección -->
         <div class="direction">
@@ -75,7 +76,6 @@
         <!-- Altitud -->
         <div id="telemetriaDiv" style="font-size: 24px; text-align: center; width:100%; margin-top: 20px;">
             <p><strong>Altitud:</strong> <span id="altitudValor">0</span> m</p>
-            <p style="font-size: 12px; color: #666;"><strong>Estado Telemetría:</strong> <span id="estadoTelemetria">desconectado</span></p>
         </div>
 
     </div>
@@ -107,28 +107,26 @@ function despegarDron() {
         return;
     }
 
-    post('/takeoff', { altura: altura})
+    post("/takeoff", { altura })
         .then(() => {
             document.getElementById('botonDespegar').classList.add('boton-amarillo');
         });
 }
 
 function aterrizarDron() {
-    post("/land").then(() => {{
-        document.getElementById('botonAterrizar').classList.add('boton-amarillo');
-    }}).then(() => {{
-        document.getElementById('botonAterrizar').textContent = "Aterrizando...";
-    }});
+    post("/land")
+        .then(() => {
+            document.getElementById('botonAterrizar').classList.add('boton-amarillo');
+        });
 }
 
 function rtlDron() {
-    post("/rtl").then(() => {{
-        document.getElementById('RTL').classList.add('boton-amarillo');
-    }}).then(() => {{
-        document.getElementById('RTL').textContent = "Volviendo a casa...";
-    }});
+    post("/rtl")
+        .then(() => {
+            // Añadimos la clase amarilla al hacer clic
+            document.getElementById('botonRtl').classList.add('boton-amarillo');
+        });
 }
-
 function moverDron(dir) {
     post("/move", { direction: dir });
 }
@@ -139,39 +137,31 @@ function moverDron(dir) {
 
 setInterval(() => {
     fetch("/telemetry")
-        .then(r => {
-            if (!r.ok) {
-                throw new Error(`HTTP ${r.status}`);
-            }
-            return r.json();
-        })
+        .then(r => r.json())
         .then(data => {
-            // Validar que los datos existen
-            if (data.alt !== undefined) {
-                document.getElementById("altitudValor").innerText = parseFloat(data.alt).toFixed(2);
-            }
-            
-            if(data.state === "connected"){
-                document.getElementById("altitudValor").innerText = "0.00";
-                document.getElementById("estadoTelemetria").innerText = "aterrizado";
-                document.getElementById('botonDespegar').classList.remove('boton-verde');
-                document.getElementById('botonAterrizar').classList.remove('boton-amarillo');
-                document.getElementById('botonAterrizar').classList.add('boton-verde');
-            }
-            const estado = data.state || "desconectado";
-            document.getElementById("estadoTelemetria").innerText = estado;
+            document.getElementById("altitudValor").innerText = data.alt.toFixed(2);
+            const estado = data.state;
 
             if (estado === "flying") {
                 const botonDespegar = document.getElementById('botonDespegar');
                 botonDespegar.classList.remove('boton-amarillo');
                 botonDespegar.classList.add('boton-verde');
-                document.getElementById('botonAterrizar').classList.remove('boton-verde')
             }
+
+            const botonAterrizar = document.getElementById('botonAterrizar');
+            if (botonAterrizar.classList.contains('boton-amarillo') && estado === "connected") {
+                botonAterrizar.classList.remove('boton-amarillo');
+                botonAterrizar.classList.add('boton-verde');
+            }
+
+            const botonRtl = document.getElementById('botonRtl');
+            if (botonRtl.classList.contains('boton-amarillo') && estado === "connected") {
+                botonRtl.classList.remove('boton-amarillo');
+                botonRtl.classList.add('boton-verde');
+            }
+
         })
-        .catch(error => {
-            console.error("Error en telemetría:", error);
-            document.getElementById("estadoTelemetria").innerText = "error: " + error.message;
-        });
+        .catch(() => {});
 }, 500);
 
 </script>

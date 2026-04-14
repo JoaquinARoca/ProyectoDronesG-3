@@ -3,9 +3,6 @@
 # torch
 # seaborn
 # tpdm
-# numpy
-# pandas
-# aiortc
 #######################################
 
 import threading
@@ -79,8 +76,7 @@ class VideoReceiver:
                     #print(f"Unexpected frame type: {type(frame)}")
                     continue
                 if self.objectID:
-                    if frame_count % 50 == 0:
-                        frame_count = 0
+                    if frame_count % 15 == 0:
                         detectado, rectangulo  = self.detector.detect(frame,self.objectID)
 
                     if detectado:
@@ -274,21 +270,24 @@ def platano ():
     global video_receiver
     video_receiver.setObject(46)
 
-def apple ():
-    global video_receiver
-    video_receiver.setObject(47)
-
 def clock ():
     video_receiver.setObject(74)
-
-def coche ():
-    video_receiver.setObject(2)
 
 def pizza ():
     video_receiver.setObject(53)
 
+def avion ():
+    video_receiver.setObject(4)
+
+def coche ():
+    video_receiver.setObject(2)
+
+def moto ():
+    video_receiver.setObject(3)
+
 def crear_ventana():
     global dron
+
     global  altShowLbl, headingShowLbl,  speedSldr, gradesSldr, stateShowLbl
     global connectBtn, armBtn, takeOffBtn, landBtn, RTLBtn
     global previousBtn # aqui guardaré el ultimo boton de navegación clicado
@@ -444,8 +443,6 @@ def crear_ventana():
     detectFrame.columnconfigure(0, weight=1)
     detectFrame.columnconfigure(1, weight=1)
     detectFrame.columnconfigure(2, weight=1)
-    detectFrame.columnconfigure(3, weight=1)
-    detectFrame.columnconfigure(4, weight=1)
 
     bananaBtn = tk.Button(detectFrame, text="Banana", bg="dark orange", command=platano)
     bananaBtn.grid(row=0, column=0, padx=5, pady=5, sticky=tk.N + tk.S + tk.E + tk.W)
@@ -456,13 +453,20 @@ def crear_ventana():
     pizzaBtn = tk.Button(detectFrame, text="Pizza", bg="dark orange", command=pizza)
     pizzaBtn.grid(row=0, column=2, padx=5, pady=5, sticky=tk.N + tk.S + tk.E + tk.W)
 
+    # Configuramos una fila extra en el frame de detección
+    detectFrame.rowconfigure(1, weight=1)
+
+    # Botón avion
+    avionBtn = tk.Button(detectFrame, text="Avion", bg="dark orange", command=avion)
+    avionBtn.grid(row=1, column=0, padx=5, pady=5, sticky=tk.N + tk.S + tk.E + tk.W)
+
+    # Botón Coche
     cocheBtn = tk.Button(detectFrame, text="Coche", bg="dark orange", command=coche)
-    cocheBtn.grid(row=0, column=3, padx=5, pady=5, sticky=tk.N + tk.S + tk.E + tk.W)
+    cocheBtn.grid(row=1, column=1, padx=5, pady=5, sticky=tk.N + tk.S + tk.E + tk.W)
 
-    appleBtn = tk.Button(detectFrame, text="Manzana", bg="dark orange", command=apple)
-    appleBtn.grid(row=0, column=4, padx=5, pady=5, sticky=tk.N + tk.S + tk.E + tk.W)
-
-
+    # Botón Moto
+    MotoBtn = tk.Button(detectFrame, text="Moto", bg="dark orange", command=moto)
+    MotoBtn.grid(row=1, column=2, padx=5, pady=5, sticky=tk.N + tk.S + tk.E + tk.W)
 
     return ventana
 

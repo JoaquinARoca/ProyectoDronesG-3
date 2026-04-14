@@ -24,7 +24,7 @@ def _send_telemetry_info(self, process_telemetry_info):
             process_telemetry_info (telemetry_info)
         else:
             process_telemetry_info (self.id, telemetry_info)
-        time.sleep(1/8) #self.frequency
+        time.sleep(1/self.frequency)
 
 def send_telemetry_info(self, process_telemetry_info):
     telemetryThread = threading.Thread(target=self._send_telemetry_info, args=[process_telemetry_info,])
