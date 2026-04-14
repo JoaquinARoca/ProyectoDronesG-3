@@ -1,6 +1,6 @@
 ############  INSTALAR ##############
 # paho-mqtt, version 1.6.1
-#####################################
+####################################
 
 import paho.mqtt.client as mqtt
 import json
