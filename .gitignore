@@ -1,0 +1,16 @@
+# Certificados SSL (cada usuario genera los suyos)
+*.pem
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Entornos virtuales
+venv/
+.env/
+env/
+
+# IDEs
+.vscode/
+.idea/
