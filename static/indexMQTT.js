@@ -4,7 +4,7 @@ const usuario = "joaquin";
 // ── Broker MQTT ──────────────────────────────────────────────────
 const BROKER_HOST     = 'dronseetac.upc.edu';
 const BROKER_PORT     = 8000;
-const BROKER_PROTOCOL = 'ws';
+const BROKER_PROTOCOL = 'ws';  
 const BROKER_PATH     = '/mqtt';
 const BROKER_USERNAME = 'dronsEETAC';
 const BROKER_PASSWORD = 'mimara1456.';
@@ -56,6 +56,74 @@ function actualizarMapa(lat, lon) {
 
     document.getElementById('mapaLat').innerText = lat.toFixed(6);
     document.getElementById('mapaLon').innerText = lon.toFixed(6);
+}
+
+// ── Control por voz ──────────────────────────────────────────────
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+var recognition = null;
+var vozActiva = false;
+
+function toggleVoz() {
+    if (!SpeechRecognition) {
+        alert('Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.');
+        return;
+    }
+    vozActiva ? pararVoz() : iniciarVoz();
+}
+
+function iniciarVoz() {
+    recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+        vozActiva = true;
+        document.getElementById('botonVoz').classList.add('boton-verde');
+        document.getElementById('botonVoz').innerText = '🎤 Desactivar control por voz';
+        document.getElementById('vozEstado').innerText = 'Escuchando…';
+    };
+
+    recognition.onresult = (event) => {
+        const texto = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+        document.getElementById('vozEstado').innerText = '🗣 "' + texto + '"';
+        procesarComandoVoz(texto);
+    };
+
+    recognition.onerror = (e) => {
+        document.getElementById('vozEstado').innerText = 'Error micrófono: ' + e.error;
+    };
+
+    // Reiniciar automáticamente si se corta (navegador lo cierra tras silencio)
+    recognition.onend = () => {
+        if (vozActiva) recognition.start();
+    };
+
+    recognition.start();
+}
+
+function pararVoz() {
+    vozActiva = false;
+    if (recognition) recognition.stop();
+    document.getElementById('botonVoz').classList.remove('boton-verde');
+    document.getElementById('botonVoz').innerText = '🎤 Activar control por voz';
+    document.getElementById('vozEstado').innerText = '';
+}
+
+function procesarComandoVoz(texto) {
+    if      (texto.includes('despega') || texto.includes('despegar'))           despegarDron();
+    else if (texto.includes('aterriza') || texto.includes('aterrizar'))         aterrizarDron();
+    else if (texto.includes('vuelve') || texto.includes('rtl') || texto.includes('casa')) rtlDron();
+    else if (texto.includes('para') || texto.includes('stop'))                  moverDron('Stop');
+    else if (texto.includes('noreste') || texto.includes('nordeste'))           moverDron('NorthEast');
+    else if (texto.includes('noroeste') || texto.includes('nordoeste'))         moverDron('NorthWest');
+    else if (texto.includes('sureste'))                                         moverDron('SouthEast');
+    else if (texto.includes('suroeste'))                                        moverDron('SouthWest');
+    else if (texto.includes('norte') || texto.includes('adelante'))             moverDron('North');
+    else if (texto.includes('sur') || texto.includes('atrás'))                  moverDron('South');
+    else if (texto.includes('este') || texto.includes('derecha'))               moverDron('East');
+    else if (texto.includes('oeste') || texto.includes('izquierda'))            moverDron('West');
+    else if (texto.includes('conecta') || texto.includes('conectar'))           conectarDron();
 }
 
 // ── Video WebRTC ─────────────────────────────────────────────────

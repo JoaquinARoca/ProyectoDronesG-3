@@ -349,6 +349,92 @@ En todo caso, en este repositorio [![DroneEngineeringEcosystem Badge](https://im
  
 El uso del micrófono del dispositivo móvil para capturar la voz y controlar el dron con ella plantea el reto de que debe hacerse en modo seguro, es decir, con HTTPS y no con HTTP. Esto es así porque tratandose de información privada del usuario (su voz) los navegadores exigen que la información se transmita encriptada, lo cual requiere del uso de certificados que implementen claves públicas y privadas. Lo mismo pasaría si quisiésemos capturar información de otros sensores del movil, como por ejemplo, la imagen de la cámara o la geolocalización del móvil. Aunque resolver la cuestion solo requiere generar los certificados necesarios (cosa muy sencilla) y añadir unas pocas líneas de código, los conceptos que hay detrás son complejos, aunque muy interesantes. Esta colección de vídeos [![DroneEngineeringEcosystem Badge](https://img.shields.io/badge/DEE-WebApps_seguras-pink.svg)](https://www.youtube.com/playlist?list=PLyAtSQhMsD4qbgXn6jheozHsjU4GRCqtv) ayuda a abordar la cuestión.
 
+## 6. Puesta en marcha de la WebApp (Versión 2)
+
+### 6.1 Requisitos previos
+
+Instalar las dependencias Python necesarias:
+```
+pip install flask aiortc opencv-python
+```
+
+### 6.2 Generación de certificados SSL
+
+El control por voz requiere acceso al micrófono del dispositivo. Los navegadores solo permiten esto en contextos seguros (HTTPS). Por ello, el servidor web debe arrancarse con un certificado SSL.
+
+Los certificados **no se incluyen en el repositorio** (están en `.gitignore`). Cada miembro del equipo debe generarlos localmente una sola vez con el siguiente comando, ejecutado desde la raíz del proyecto:
+
+**Linux / macOS / Windows (Git Bash):**
+```bash
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "//CN=localhost"
+```
+
+**Windows (PowerShell o CMD):**
+```
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=localhost"
+```
+
+Esto genera dos ficheros en la raíz del proyecto:
+- `cert.pem` — certificado público
+- `key.pem` — clave privada
+
+> Si OpenSSL no está instalado, puede descargarse desde https://slproweb.com/products/Win32OpenSSL.html (Windows) o instalarse con `brew install openssl` (macOS).
+
+### 6.3 Arranque de los servicios
+
+Abrir **dos terminales** en la raíz del proyecto y ejecutar en cada una:
+
+**Terminal 1 — Servicio de autopiloto:**
+```
+python AutopilotService.py
+```
+
+**Terminal 2 — Servidor web (WebApp):**
+```
+python serverMQTT.py
+```
+
+**Terminal 3 (opcional) — Servicio de cámara:**
+```
+python CameraService.py
+```
+
+### 6.4 Acceso desde el navegador
+
+Abrir el navegador (Chrome o Edge, **no Firefox**) y acceder a:
+```
+https://localhost:5002
+```
+
+> El navegador mostrará un aviso de certificado no confiable porque es autofirmado. Hacer clic en **"Configuración avanzada"** → **"Continuar de todos modos"**. Esto es normal en desarrollo local.
+
+### 6.5 Pestañas de la WebApp
+
+| Pestaña | Descripción |
+|---|---|
+| **Control** | Botones para conectar, despegar, aterrizar, RTL, navegar y cambiar heading. Incluye control por voz (botón 🎤). |
+| **Mapa** | Mapa OpenStreetMap (Leaflet) con la posición del dron en tiempo real y su trayectoria. |
+| **Video** | Stream de vídeo WebRTC recibido del `CameraService`. Introducir `ip:puerto` del servicio y pulsar Conectar. |
+
+### 6.6 Control por voz
+
+El control por voz se activa con el botón **🎤 Activar control por voz** en la pestaña Control. Palabras clave reconocidas:
+
+| Comando | Acción |
+|---|---|
+| "Despega" / "Despegar" | Despegar a la altura configurada |
+| "Aterriza" / "Aterrizar" | Aterrizar |
+| "Vuelve" / "RTL" / "Casa" | RTL (Return to Launch) |
+| "Para" / "Stop" | Detener movimiento |
+| "Norte" / "Adelante" | Mover hacia el norte |
+| "Sur" / "Atrás" | Mover hacia el sur |
+| "Este" / "Derecha" | Mover hacia el este |
+| "Oeste" / "Izquierda" | Mover hacia el oeste |
+| "Noreste" / "Noroeste" / "Sureste" / "Suroeste" | Movimientos diagonales |
+| "Conecta" / "Conectar" | Conectar con el dron |
+
+> El reconocimiento de voz usa la Web Speech API del navegador en español (`es-ES`). Solo funciona en Chrome y Edge.
+
 
 
 
