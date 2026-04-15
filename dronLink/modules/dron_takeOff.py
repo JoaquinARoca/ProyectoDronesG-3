@@ -3,7 +3,7 @@ import time
 from pymavlink import mavutil
 
 def _checkAltitudeReached (self, msg, aTargetAltitude):
-    if msg.relative_alt in range (aTargetAltitude  * 1000 -500,  aTargetAltitude  * 1000 +500):
+    if msg.relative_alt in range (int(aTargetAltitude) * 1000 -500,  int(aTargetAltitude) * 1000 +500):
         return True
     else:
         return False

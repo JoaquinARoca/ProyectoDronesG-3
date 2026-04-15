@@ -6,7 +6,7 @@ import paho.mqtt.client as mqtt
 import json
 from dronLink.Dron import Dron
 
-usuario = "aleix"
+usuario = "joaquin"
 
 # esta función sirve para publicar los eventos resultantes de las acciones solicitadas
 def publish_event (event):
@@ -42,7 +42,8 @@ def on_message(cli, userdata, message):
             print ('vamos a armar')
             dron.arm()
             print ('vamos a despegar')
-            dron.takeOff(5, blocking=False, callback=publish_event, params='flying')
+            altura = float(message.payload.decode("utf-8"))
+            dron.takeOff(altura, blocking=False, callback=publish_event, params='flying')
 
     if command == 'go':
         if dron.state == 'flying':

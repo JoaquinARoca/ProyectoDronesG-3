@@ -1,0 +1,19 @@
+.boton {
+        font-size: 18px; padding: 10px; margin: 5px 0; cursor: pointer;
+        background-color: #008CBA; color: white; border: none;
+        border-radius: 5px; width: 100%; transition: background-color 0.3s;
+    }
+    .boton-verde { background-color: #4CAF50 !important; }
+    .boton-amarillo { background-color: #FFD700 !important; color: black !important; }
+    .boton-rojo { background-color: #f44336 !important; }
+
+    .direction {
+        display: grid; grid-template-rows: 100px 100px 100px;
+        grid-template-columns: 100px 100px 100px; text-align: center;
+        width:fit-content; margin: 20px auto;
+    }
+    .box {
+        background: #444; border: 1px solid #555; display: flex;
+        align-items: center; justify-content: center; color: yellowgreen;
+        font-size: 18px; margin: 5px; cursor: pointer; border-radius: 8px;
+    }

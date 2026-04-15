@@ -1,78 +1,101 @@
 ###########  INSTALAR #########################
 # opencv-python
-# aiortc
+# aiortc  (incluye aiohttp y av como dependencias)
 ###############################################
 
-
 import asyncio
-import cv2
-from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
-from aiortc.contrib.signaling import TcpSocketSignaling
-from av import VideoFrame
+import json
 import fractions
+import cv2
+from aiohttp import web
+from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
+from av import VideoFrame
+
+pcs = set()
 
 
 class CustomVideoStreamTrack(VideoStreamTrack):
     def __init__(self, camera_id):
         super().__init__()
-        print ("Preparando la cámara ...")
+        print("Preparando la cámara...")
         self.cap = cv2.VideoCapture(camera_id)
         self.frame_count = 0
 
     async def recv(self):
         self.frame_count += 1
-        print(f"Sending frame {self.frame_count}")
         ret, frame = self.cap.read()
         if not ret:
-            print("Failed to read frame from camera")
+            print("Error al leer frame de la cámara")
             return None
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         video_frame = VideoFrame.from_ndarray(frame, format="rgb24")
         video_frame.pts = self.frame_count
-        video_frame.time_base = fractions.Fraction(1, 30)  # Use fractions for time_base
-
-
-        video_frame = VideoFrame.from_ndarray(frame, format="rgb24")
-        video_frame.pts = self.frame_count
-        video_frame.time_base = fractions.Fraction(1, 30)  # Use fractions for time_base
+        video_frame.time_base = fractions.Fraction(1, 30)
         return video_frame
 
-async def setup_webrtc_and_run(ip_address, port, camera_id):
-    # aquí le digo el puerto donde se abre el websocket para ponerse de acuerdo con el cliente
-    signaling = TcpSocketSignaling(ip_address, port)
-    # Creamos la estructura que se necesita para establecer el canal de comunicación via WebRTC
+
+# Cabeceras CORS para que el navegador (puerto 5002) pueda llamar al CameraService (puerto 9999)
+CORS_HEADERS = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+}
+
+
+async def offer_handler(request):
+    # Preflight CORS
+    if request.method == 'OPTIONS':
+        return web.Response(headers=CORS_HEADERS)
+
+    # El navegador envía su oferta SDP
+    params = await request.json()
+    offer = RTCSessionDescription(sdp=params['sdp'], type=params['type'])
+
     pc = RTCPeerConnection()
-    video_sender = CustomVideoStreamTrack(camera_id)
-    pc.addTrack(video_sender) # aqui le decimos de dónde sale el stream de video
+    pcs.add(pc)
 
-    try:
-        print ("Esperando clientes")
-        await signaling.connect()
+    @pc.on('connectionstatechange')
+    async def on_connectionstatechange():
+        print(f"Estado conexión WebRTC: {pc.connectionState}")
+        if pc.connectionState in ('failed', 'closed'):
+            await pc.close()
+            pcs.discard(pc)
 
-        print ("Preparo la oferta. En cuanto se conecte el cliente se la envío")
-        offer = await pc.createOffer()
-        await pc.setLocalDescription(offer)
-        await signaling.send(pc.localDescription)
-        print ("Ciente conectado. Envio oferta y espero respuesta")
-        while True:
-            obj = await signaling.receive()
-            if isinstance(obj, RTCSessionDescription):
-                await pc.setRemoteDescription(obj)
-                print("Respuesta recibida. Trasmisión en marcha")
-            elif obj is None:
-                print("Fallo en la coordinación")
-                break
-        print("Cierro conexión")
-    finally:
-        await pc.close()
+    # Añadir la pista de vídeo de la cámara
+    camera_id = request.app['camera_id']
+    pc.addTrack(CustomVideoStreamTrack(camera_id))
 
-async def main():
-    # En este caso es el emisor el que actua de servidor, exponiendo el canal de comunicación
-    # en el puerto 9999
-    ip_address = "0.0.0.0"
-    port = 9999
-    camera_id = 0  # Hay que cambiar eso en el caso de capturar el video que viene del dron
-    await setup_webrtc_and_run(ip_address, port, camera_id)
+    # Procesar oferta y generar respuesta
+    await pc.setRemoteDescription(offer)
+    answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
 
-if __name__ == "__main__":
-    asyncio.run(main())
+    return web.Response(
+        content_type='application/json',
+        body=json.dumps({
+            'sdp': pc.localDescription.sdp,
+            'type': pc.localDescription.type,
+        }),
+        headers=CORS_HEADERS,
+    )
+
+
+async def on_shutdown(app):
+    coros = [pc.close() for pc in pcs]
+    await asyncio.gather(*coros)
+    pcs.clear()
+
+
+def main():
+    camera_id = 0  # Cambiar si el vídeo del dron viene de otra fuente
+    app = web.Application()
+    app['camera_id'] = camera_id
+    app.router.add_route('OPTIONS', '/offer', offer_handler)
+    app.router.add_post('/offer', offer_handler)
+    app.on_shutdown.append(on_shutdown)
+    print("CameraService arrancado en http://0.0.0.0:9999")
+    web.run_app(app, host='0.0.0.0', port=9999)
+
+
+if __name__ == '__main__':
+    main()
